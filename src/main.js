@@ -11,6 +11,7 @@ const init = () => {
     const localStorageKey = 'last_state';
     const localStorageScrollBarKey = 'scroll_bar_settings';
     const localStorageThemeKey = 'theme_settings';
+    const localStorageSpoilerKey = 'spoiler_settings';
     const confirmationMessage = 'Are you sure you want to reset? Your changes will be lost.';
     // default template
     const defaultInput = `# Markdown syntax guide
@@ -144,6 +145,7 @@ This web site is using ${"`"}markedjs/marked${"`"}.
             headerIds: false,
             mangle: false
         };
+        markdown = markdown.replace(/\|\|([\s\S]+?)\|\|/g, '<span class="spoiler">$1</span>');
         let html = marked.parse(markdown, options);
         let sanitized = DOMPurify.sanitize(html);
         document.querySelector('#output').innerHTML = sanitized;
@@ -237,6 +239,29 @@ This web site is using ${"`"}markedjs/marked${"`"}.
         });
     };
 
+    // ----- spoiler toggle (show/hide spoilers) -----
+    let initSpoilerToggle = (settings) => {
+        let checkbox = document.querySelector('#spoiler-checkbox');
+        if (!checkbox) return;
+        checkbox.checked = settings;
+
+        if (settings) {
+            document.documentElement.setAttribute('data-show-spoilers', '');
+        } else {
+            document.documentElement.removeAttribute('data-show-spoilers');
+        }
+
+        checkbox.addEventListener('change', (event) => {
+            let checked = event.currentTarget.checked;
+            if (checked) {
+                document.documentElement.setAttribute('data-show-spoilers', '');
+            } else {
+                document.documentElement.removeAttribute('data-show-spoilers');
+            }
+            saveSpoilerSettings(checked);
+        });
+    };
+
     let enableScrollBarSync = () => {
         scrollBarSync = true;
     };
@@ -313,6 +338,7 @@ This web site is using ${"`"}markedjs/marked${"`"}.
                     useCORS: true,
                     onclone: (clonedDoc) => {
                         clonedDoc.documentElement.setAttribute('data-theme', 'light');
+                        clonedDoc.documentElement.setAttribute('data-show-spoilers', '');
 
                         const markdownLink = clonedDoc.getElementById('gh-markdown-link');
                         if (markdownLink) {
@@ -442,6 +468,15 @@ This web site is using ${"`"}markedjs/marked${"`"}.
         }
     };
 
+    let loadSpoilerSettings = () => {
+        return Storehouse.getItem(localStorageNamespace, localStorageSpoilerKey) || false;
+    };
+
+    let saveSpoilerSettings = (settings) => {
+        let expiredAt = new Date(2099, 1, 1);
+        Storehouse.setItem(localStorageNamespace, localStorageSpoilerKey, settings, expiredAt);
+    };
+
     let setupDivider = () => {
         let lastLeftRatio = 0.5;
         const divider = document.getElementById('split-divider');
@@ -542,6 +577,16 @@ This web site is using ${"`"}markedjs/marked${"`"}.
         themeSettings = false;
     }
     initThemeToggle(themeSettings);
+
+    let spoilerSettings = loadSpoilerSettings() || false;
+    initSpoilerToggle(spoilerSettings);
+
+    // spoiler click handler (event delegation)
+    document.querySelector('#output').addEventListener('click', (e) => {
+        const spoiler = e.target.closest('.spoiler');
+        if (!spoiler) return;
+        spoiler.classList.toggle('revealed');
+    });
 
     setupDivider();
 };

@@ -209,3 +209,22 @@ footer {
 [data-theme="dark"] footer {
   background-color: #333;
 }
+
+/* Spoiler tag styles */
+.markdown-body .spoiler {
+  background-color: #000;
+  color: transparent;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.markdown-body .spoiler:hover,
+.markdown-body .spoiler.revealed {
+  color: inherit;
+  background-color: transparent;
+}
+
+html[data-show-spoilers] .markdown-body .spoiler {
+  color: inherit !important;
+  background-color: transparent !important;
+}
